@@ -1,17 +1,19 @@
 #include "VoltLora.h"
 
-VoltLora::VoltLora(uint8_t rxPin, uint8_t txPin) : LoRa(rxPin, txPin) {}
+VoltLora::VoltLora(uint8_t rxPin, uint8_t txPin) {
+    _serial = new SoftwareSerial(rxPin, txPin);
+}
 
 void VoltLora::begin(long baudRate) {
     Serial.begin(baudRate);
-    LoRa.begin(baudRate);
+    _serial->begin(baudRate);
     delay(5000);
 }
 
 void VoltLora::setAddress(uint8_t address) {
     String command = "AT+ADDRESS=" + String(address);
-    String response = sendCommand(command);  // Now correctly returning String
-    Serial.println(checkError(response)); // Print parsed response
+    String response = sendCommand(command);
+    Serial.println(checkError(response));
 }
 
 void VoltLora::setNetworkID(uint8_t networkID) {
@@ -34,19 +36,19 @@ void VoltLora::send(uint8_t receiverAddress, String message) {
 
 String VoltLora::readMessage() {
     String receivedMessage = "";
-    while (LoRa.available()) {
-        receivedMessage += (char)LoRa.read();
+    while (_serial->available()) {
+        receivedMessage += (char)_serial->read();
     }
     return receivedMessage;
 }
 
 String VoltLora::sendCommand(String command) {
-    LoRa.println(command);
+    _serial->println(command);
     delay(200); // Give LoRa some time to respond
 
     String response = "";
-    while (LoRa.available()) {
-        response += (char)LoRa.read();
+    while (_serial->available()) {
+        response += (char)_serial->read();
     }
     return response;
 }
@@ -58,6 +60,18 @@ String VoltLora::checkError(String response) {
         return "Command executed successfully.";
     }
     return "Unknown response: " + response;
+}
+
+bool VoltLora::available() {
+    return _serial->available();
+}
+
+char VoltLora::read() {
+    return _serial->read();
+}
+
+void VoltLora::write(char c) {
+    _serial->write(c);
 }
 
 void VoltLora::printWiring() {
